@@ -291,6 +291,7 @@ function CheckoutPage() {
 										onBack={prevStep}
 										bookingState={state}
 										selectedRoom={selectedRoom}
+										guestInfo={state.guestInfo}
 										isSubmitting={bookingMutation.isPending}
 									/>
 								)}

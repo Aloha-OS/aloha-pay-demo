@@ -11,8 +11,8 @@ export const rooms: Room[] = [
 This thoughtfully designed space offers a peaceful retreat with views of our
 lush tropical gardens. Perfect for couples or solo travelers seeking comfort
 without compromise.`,
-		pricePerNight: 189,
-		currency: "USD",
+		pricePerNight: 165000,
+		currency: "CLP",
 		images: [
 			{
 				id: "img-001-1",
@@ -54,8 +54,8 @@ without compromise.`,
 our Ocean View Deluxe room. Floor-to-ceiling windows frame stunning ocean
 vistas, while the private balcony provides the perfect spot to enjoy your
 morning coffee as the sun rises over the water.`,
-		pricePerNight: 289,
-		currency: "USD",
+		pricePerNight: 255000,
+		currency: "CLP",
 		images: [
 			{
 				id: "img-002-1",
@@ -113,8 +113,8 @@ morning coffee as the sun rises over the water.`,
 The Superior Pool Access room combines luxury with convenience, featuring a
 private terrace with sun loungers and immediate access to crystal-clear waters.
 Perfect for those who love to start their day with a refreshing swim.`,
-		pricePerNight: 349,
-		currency: "USD",
+		pricePerNight: 305000,
+		currency: "CLP",
 		images: [
 			{
 				id: "img-003-1",
@@ -170,8 +170,8 @@ Perfect for those who love to start their day with a refreshing swim.`,
 This expansive accommodation features a separate living area, dining space, and
 bedroom, all oriented to capture the magnificent ocean views. The wrap-around
 balcony offers multiple vantage points to watch dolphins play or boats sail by.`,
-		pricePerNight: 549,
-		currency: "USD",
+		pricePerNight: 485000,
+		currency: "CLP",
 		images: [
 			{
 				id: "img-004-1",
@@ -243,8 +243,8 @@ This thoughtfully designed accommodation features a master bedroom with king bed
 a connecting kids' room with twin beds, and a shared living space. Direct beach
 access means sandcastles are just steps away, while the in-room entertainment
 center keeps everyone happy during downtime.`,
-		pricePerNight: 629,
-		currency: "USD",
+		pricePerNight: 555000,
+		currency: "CLP",
 		images: [
 			{
 				id: "img-005-1",
@@ -310,8 +310,8 @@ Occupying the entire top floor, this magnificent residence features three bedroo
 a gourmet kitchen, formal dining room, private cinema, and an expansive rooftop
 terrace with infinity pool and outdoor kitchen. Personal butler service ensures
 your every wish is anticipated and fulfilled.`,
-		pricePerNight: 2499,
-		currency: "USD",
+		pricePerNight: 2200000,
+		currency: "CLP",
 		images: [
 			{
 				id: "img-006-1",

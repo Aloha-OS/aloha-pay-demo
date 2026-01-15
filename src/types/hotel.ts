@@ -41,7 +41,7 @@ export interface Room {
 	shortDescription: string;
 	fullDescription: string;
 	pricePerNight: number;
-	currency: "USD";
+	currency: "CLP";
 	images: RoomImage[];
 	amenityIds: string[];
 	capacity: {

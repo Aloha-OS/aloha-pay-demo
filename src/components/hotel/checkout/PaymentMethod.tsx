@@ -1,31 +1,12 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { ArrowLeft, Check, CreditCard, Globe, Shield, Loader2, ExternalLink, Copy, CheckCircle } from "lucide-react";
-import type { BookingState, Room } from "@/types/hotel";
-import { type AlohaCurrency, type CreatePaymentLinkResponse, convertUsdToLocal, USD_EXCHANGE_RATES } from "@/lib/aloha-pay";
+import { ArrowLeft, Check, CreditCard, Globe, Shield, CheckCircle, Loader2 } from "lucide-react";
+import type { BookingState, Room, GuestInfo } from "@/types/hotel";
 import { cn } from "@/lib/utils";
-import { formatPrice } from "@/lib/hotel/price-utils";
-
-// Format local currency amount
-function formatLocalCurrency(amount: number, currency: AlohaCurrency): string {
-	return new Intl.NumberFormat("en-US", {
-		style: "currency",
-		currency,
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(amount);
-}
+import { AlohaPayCheckout, isAlohaPaCountrySupported, type AlohaPayCountry } from "@/components/aloha-pay/AlohaPayCheckout";
 
 interface PaymentMethodProps {
 	selectedMethod: "aloha-pay" | "credit-card" | null;
@@ -34,16 +15,9 @@ interface PaymentMethodProps {
 	onBack: () => void;
 	bookingState: BookingState;
 	selectedRoom: Room | undefined;
+	guestInfo: GuestInfo | null;
 	isSubmitting?: boolean;
 }
-
-const CURRENCY_OPTIONS: { value: AlohaCurrency; labelKey: string; flag: string }[] = [
-	{ value: "ARS", labelKey: "currencies.ARS", flag: "🇦🇷" },
-	{ value: "BRL", labelKey: "currencies.BRL", flag: "🇧🇷" },
-	{ value: "CLP", labelKey: "currencies.CLP", flag: "🇨🇱" },
-	{ value: "COP", labelKey: "currencies.COP", flag: "🇨🇴" },
-	{ value: "MXN", labelKey: "currencies.MXN", flag: "🇲🇽" },
-];
 
 export function PaymentMethod({
 	selectedMethod,
@@ -52,58 +26,29 @@ export function PaymentMethod({
 	onBack,
 	bookingState,
 	selectedRoom,
+	guestInfo,
 	isSubmitting = false,
 }: PaymentMethodProps) {
 	const { t } = useTranslation();
-	const [selectedCurrency, setSelectedCurrency] = useState<AlohaCurrency | "">("");
-	const [paymentLink, setPaymentLink] = useState<CreatePaymentLinkResponse["data"] | null>(null);
-	const [copied, setCopied] = useState(false);
+	const [paymentCompleted, setPaymentCompleted] = useState(false);
 
-	const canProceed = Boolean(selectedMethod);
+	// For Aloha Pay, require payment to be completed before confirming
+	const canProceed = selectedMethod === "aloha-pay"
+		? paymentCompleted
+		: Boolean(selectedMethod);
 
-	// Calculate converted amount when currency is selected
-	const convertedAmount = selectedCurrency
-		? convertUsdToLocal(bookingState.totalPrice, selectedCurrency)
-		: 0;
+	// Get the API key from environment (exposed via Vite)
+	const apiKey = import.meta.env.VITE_ALOHA_PAY_API_KEY || "";
 
-	// Mutation to create payment link
-	const createPaymentMutation = useMutation({
-		mutationFn: async () => {
-			if (!selectedCurrency || !selectedRoom) {
-				throw new Error("Please select a currency");
-			}
+	// Determine if the guest's country is supported by Aloha Pay
+	const guestCountry = guestInfo?.country;
+	const defaultCountry = guestCountry && isAlohaPaCountrySupported(guestCountry)
+		? guestCountry as AlohaPayCountry
+		: undefined;
 
-			const amountInLocalCurrency = convertUsdToLocal(bookingState.totalPrice, selectedCurrency);
-
-			const response = await fetch("/api/payment-links", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					amount: amountInLocalCurrency,
-					currency: selectedCurrency,
-					description: `Coral Cove Resort - ${selectedRoom.name} (${bookingState.numberOfNights} nights)`,
-					amount_type: "receive",
-				}),
-			});
-
-			if (!response.ok) {
-				const error = await response.json();
-				throw new Error(error.message || "Failed to create payment link");
-			}
-
-			return response.json() as Promise<CreatePaymentLinkResponse>;
-		},
-		onSuccess: (data) => {
-			setPaymentLink(data.data);
-		},
-	});
-
-	const handleCopyLink = async () => {
-		if (paymentLink?.url) {
-			await navigator.clipboard.writeText(paymentLink.url);
-			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
-		}
+	// Handle payment completion
+	const handlePaymentComplete = () => {
+		setPaymentCompleted(true);
 	};
 
 	const paymentOptions = [
@@ -231,171 +176,61 @@ export function PaymentMethod({
 				</div>
 			</div>
 
-			{/* Aloha Pay Integration */}
+			{/* Aloha Pay Embedded Checkout */}
 			{selectedMethod === "aloha-pay" && (
 				<Card className="bg-resort-ocean-light/10 border-resort-ocean/20">
 					<CardContent className="p-6 space-y-6">
-						<div>
-							<h4 className="font-medium text-zinc-900 mb-2">
-								{t("payment.createPaymentRequest")}
-							</h4>
-							<p className="text-sm text-zinc-600">
-								{t("payment.createPaymentRequestDesc")}
-							</p>
-						</div>
-
-						{/* Booking Summary */}
-						<div className="bg-white/60 rounded-lg p-4 space-y-2">
-							<div className="flex justify-between text-sm">
-								<span className="text-zinc-600">{t("bookingSummary.room")}</span>
-								<span className="font-medium text-zinc-900">{selectedRoom?.name}</span>
-							</div>
-							<div className="flex justify-between text-sm">
-								<span className="text-zinc-600">{t("bookingSummary.nights")}</span>
-								<span className="font-medium text-zinc-900">{bookingState.numberOfNights}</span>
-							</div>
-							<div className="flex justify-between text-sm pt-2 border-t">
-								<span className="text-zinc-600">{t("payment.totalUsd")}</span>
-								<span className="font-medium text-zinc-900">{formatPrice(bookingState.totalPrice)}</span>
-							</div>
-							{selectedCurrency && (
-								<div className="flex justify-between text-sm font-medium">
-									<span className="text-zinc-900">{t("payment.totalLocal", { currency: selectedCurrency })}</span>
-									<span className="text-resort-ocean text-lg">
-										{formatLocalCurrency(convertedAmount, selectedCurrency)}
-									</span>
-								</div>
-							)}
-						</div>
-
-						{/* Exchange Rate Note */}
-						{selectedCurrency && (
-							<p className="text-xs text-zinc-500">
-								* {t("payment.exchangeRate", { rate: USD_EXCHANGE_RATES[selectedCurrency].toLocaleString(), currency: selectedCurrency })}
-							</p>
-						)}
-
-						{/* Currency Selection */}
-						<div className="space-y-2">
-							<label className="text-sm font-medium text-zinc-900">
-								{t("payment.selectCurrency")}
-							</label>
-							<Select
-								value={selectedCurrency}
-								onValueChange={(value) => setSelectedCurrency(value as AlohaCurrency)}
-								disabled={createPaymentMutation.isPending || !!paymentLink}
-							>
-								<SelectTrigger className="w-full bg-white">
-									<SelectValue placeholder={t("payment.chooseCurrency")} />
-								</SelectTrigger>
-								<SelectContent>
-									{CURRENCY_OPTIONS.map((currency) => (
-										<SelectItem key={currency.value} value={currency.value}>
-											<span className="flex items-center gap-2">
-												<span>{currency.flag}</span>
-												<span>{currency.value}</span>
-												<span className="text-zinc-500">- {t(currency.labelKey)}</span>
-											</span>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-
-						{/* Create Payment Link Button */}
-						{!paymentLink && (
-							<Button
-								className="w-full bg-resort-ocean hover:bg-resort-ocean-dark"
-								onClick={() => createPaymentMutation.mutate()}
-								disabled={!selectedCurrency || createPaymentMutation.isPending}
-							>
-								{createPaymentMutation.isPending ? (
-									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										{t("payment.creatingLink")}
-									</>
-								) : (
-									<>
-										<Globe className="mr-2 h-4 w-4" />
-										{t("payment.createPaymentLink")}
-									</>
-								)}
-							</Button>
-						)}
-
-						{/* Error Message */}
-						{createPaymentMutation.isError && (
-							<div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-								<p className="text-sm text-red-700">
-									{createPaymentMutation.error instanceof Error
-										? createPaymentMutation.error.message
-										: "Failed to create payment link"}
-								</p>
-							</div>
-						)}
-
-						{/* Payment Link Success */}
-						{paymentLink && (
+						{/* Payment Completed State */}
+						{paymentCompleted ? (
 							<div className="space-y-4">
 								<div className="flex items-center gap-2 text-resort-palm">
 									<CheckCircle className="h-5 w-5" />
-									<span className="font-medium">{t("payment.linkCreated")}</span>
+									<span className="font-medium">{t("payment.paymentCompleted")}</span>
 								</div>
-
-								<div className="bg-white rounded-lg p-4 space-y-3">
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-zinc-600">{t("payment.paymentId")}</span>
-										<code className="text-xs bg-zinc-100 px-2 py-1 rounded">
-											{paymentLink.id.slice(0, 8)}...
-										</code>
-									</div>
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-zinc-600">{t("payment.expires")}</span>
-										<span className="text-sm text-zinc-900">
-											{new Date(paymentLink.expires_at).toLocaleString()}
-										</span>
-									</div>
-								</div>
-
-								<div className="flex gap-2">
-									<Button
-										variant="outline"
-										className="flex-1"
-										onClick={handleCopyLink}
-									>
-										{copied ? (
-											<>
-												<Check className="mr-2 h-4 w-4" />
-												{t("payment.copied")}
-											</>
-										) : (
-											<>
-												<Copy className="mr-2 h-4 w-4" />
-												{t("payment.copyLink")}
-											</>
-										)}
-									</Button>
-									<Button
-										className="flex-1 bg-resort-ocean hover:bg-resort-ocean-dark"
-										onClick={() => window.open(paymentLink.url, "_blank")}
-									>
-										<ExternalLink className="mr-2 h-4 w-4" />
-										{t("payment.openPaymentPage")}
-									</Button>
-								</div>
-
-								<p className="text-xs text-center text-zinc-500">
-									{t("payment.openPaymentPageHint")}
+								<p className="text-sm text-zinc-600">
+									{t("payment.paymentCompletedDesc")}
 								</p>
 							</div>
-						)}
+						) : (
+							<>
+								{/* Auto-selected country notice */}
+								{defaultCountry && (
+									<div className="text-sm text-zinc-600 bg-white/60 rounded-lg p-3">
+										{t("payment.countryAutoSelected", { country: guestInfo?.country })}
+									</div>
+								)}
 
-						<div className="flex items-center gap-2 pt-2">
-							<Globe className="h-4 w-4 text-resort-ocean" />
-							<span className="text-sm text-resort-ocean font-medium">
-								{t("common.poweredBy")} Aloha Pay
-							</span>
-						</div>
+								{/* Embedded Checkout Widget */}
+								<AlohaPayCheckout
+									apiKey={apiKey}
+									amount={bookingState.totalPrice}
+									description={`Coral Cove Resort - ${selectedRoom?.name} (${bookingState.numberOfNights} ${t("bookingSummary.nights")})`}
+									locale="es"
+									defaultCountry={defaultCountry}
+									useSandbox={true}
+									customer={guestInfo ? {
+										firstName: guestInfo.firstName,
+										lastName: guestInfo.lastName,
+										email: guestInfo.email,
+										phone: guestInfo.phone,
+									} : undefined}
+									styles={{
+										// Ocean teal gradient header (resort-ocean theme)
+										headerBackground: "linear-gradient(135deg, #3B9AAD 0%, #2D7A8A 100%)",
+										// Dark text for amount display
+										amountColor: "#ffffff",
+										// Ocean teal button matching the site theme
+										buttonColor: "#3B9AAD",
+										// White text on button
+										buttonTextColor: "#ffffff",
+										// Coral accent for links (resort-coral)
+										linkColor: "#D97056",
+									}}
+									onPaymentComplete={handlePaymentComplete}
+									onError={(err) => console.error("Payment error:", err)}
+								/>
+							</>
+						)}
 					</CardContent>
 				</Card>
 			)}

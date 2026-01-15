@@ -1,12 +1,14 @@
 import type { Room, AvailabilityEntry } from "@/types/hotel";
 
 /**
- * Format price with currency symbol
+ * Format price with currency code (CLP - Chilean Peso)
+ * Shows "CLP 165.000" instead of "$165.000"
  */
-export function formatPrice(amount: number, currency: "USD" = "USD"): string {
-	return new Intl.NumberFormat("en-US", {
+export function formatPrice(amount: number, currency: "CLP" = "CLP"): string {
+	return new Intl.NumberFormat("es-CL", {
 		style: "currency",
 		currency,
+		currencyDisplay: "code",
 		minimumFractionDigits: 0,
 		maximumFractionDigits: 0,
 	}).format(amount);
@@ -17,13 +19,13 @@ export function formatPrice(amount: number, currency: "USD" = "USD"): string {
  */
 export function formatPriceDetailed(
 	amount: number,
-	currency: "USD" = "USD",
+	currency: "CLP" = "CLP",
 ): string {
-	return new Intl.NumberFormat("en-US", {
+	return new Intl.NumberFormat("es-CL", {
 		style: "currency",
 		currency,
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
 	}).format(amount);
 }
 
@@ -81,7 +83,7 @@ export function hasWeekendModifier(availability: AvailabilityEntry[]): boolean {
 /**
  * Format price per night display
  */
-export function formatPricePerNight(amount: number, currency: "USD" = "USD"): string {
+export function formatPricePerNight(amount: number, currency: "CLP" = "CLP"): string {
 	return `${formatPrice(amount, currency)}/night`;
 }
 

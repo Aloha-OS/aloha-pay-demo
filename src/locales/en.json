@@ -191,7 +191,10 @@
 		"openPaymentPageHint": "Click \"Open Payment Page\" to complete your payment securely with Aloha Pay.",
 		"exchangeRate": "Exchange rate: 1 USD = {{rate}} {{currency}} (approximate, for demo purposes)",
 		"totalUsd": "Total (USD)",
-		"totalLocal": "Total ({{currency}})"
+		"totalLocal": "Total ({{currency}})",
+		"paymentCompleted": "Payment Completed!",
+		"paymentCompletedDesc": "Your payment has been processed successfully. You can now confirm your reservation.",
+		"countryAutoSelected": "Your country ({{country}}) has been automatically pre-selected."
 	},
 	"paymentDialog": {
 		"title": "Create Payment Request",

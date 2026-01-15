@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 interface PriceDisplayProps {
 	amount: number;
-	currency?: "USD";
+	currency?: "CLP";
 	period?: "night" | "total";
 	originalAmount?: number;
 	size?: "sm" | "md" | "lg";
@@ -12,7 +12,7 @@ interface PriceDisplayProps {
 
 export function PriceDisplay({
 	amount,
-	currency = "USD",
+	currency = "CLP",
 	period = "night",
 	originalAmount,
 	size = "md",

@@ -1,310 +1,357 @@
-Welcome to your new TanStack app! 
+# Aloha Pay Demo
 
-# Getting Started
+A demonstration project showing how to integrate **Aloha Pay Embedded Checkout** into a React application. This demo simulates a hotel booking flow (Coral Cove Resort) where users can complete payments using Aloha Pay.
 
-To run this application:
+## What is Aloha Pay?
 
-```bash
-npm install
-npm run dev
-```
+Aloha Pay is a payment platform designed for Latin America, supporting local payment methods across Argentina, Brazil, Chile, Colombia, and Mexico. The Embedded Checkout allows you to integrate a payment widget directly into your application.
 
-# Building For Production
+## Prerequisites
 
-To build this application for production:
+- Node.js 18+
+- npm or pnpm
 
-```bash
-npm run build
-```
+## Environment Variables
 
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+Create a `.env` file in the root directory with the following variables:
 
 ```bash
-npm run test
+# Aloha Pay API Configuration (server-side)
+ALOHA_PAY_API_URL=https://api-dev.alohapay.co
+ALOHA_PAY_API_KEY=your_api_key_here
+
+# Client-side API Key (VITE_ prefix exposes it to the browser)
+VITE_ALOHA_PAY_API_KEY=your_api_key_here
 ```
 
-## Styling
+> **Note:** Contact the Aloha Pay team to obtain your API keys. Use sandbox/development keys for testing.
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+## Getting Started
 
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd aloha-pay-demo
+   ```
 
-## Linting & Formatting
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
+3. **Configure environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Aloha Pay API keys
+   ```
 
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-```bash
-npm run lint
-npm run format
-npm run check
-```
+5. **Open the application**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
+## Aloha Pay Integration
 
-## Shadcn
+### Embedded Checkout Component
 
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
+The main integration component is located at `src/components/aloha-pay/AlohaPayCheckout.tsx`. This component:
 
-```bash
-pnpm dlx shadcn@latest add button
-```
+1. Loads the Aloha Pay SDK from CDN
+2. Initializes the payment widget in a container
+3. Handles payment lifecycle events
 
-
-
-## Routing
-This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add another a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
+#### Basic Usage
 
 ```tsx
-import { Link } from "@tanstack/react-router";
+import { AlohaPayCheckout } from "@/components/aloha-pay/AlohaPayCheckout";
+
+function PaymentPage() {
+  return (
+    <AlohaPayCheckout
+      apiKey={import.meta.env.VITE_ALOHA_PAY_API_KEY}
+      amount={150.00}
+      description="Order #12345"
+      locale="es"
+      defaultCountry="MX"
+      useSandbox={true}
+      customer={{
+        firstName: "John",
+        lastName: "Doe",
+        email: "john@example.com",
+        phone: "+52 555 123 4567",
+      }}
+      onPaymentComplete={() => {
+        console.log("Payment completed!");
+      }}
+      onError={(error) => {
+        console.error("Payment error:", error);
+      }}
+    />
+  );
+}
 ```
 
-Then anywhere in your JSX you can use it like so:
+#### Props Reference
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `apiKey` | `string` | Yes | Your Aloha Pay API key |
+| `amount` | `number` | Yes | Payment amount in the local currency |
+| `description` | `string` | No | Payment description shown to the user |
+| `locale` | `"en" \| "es" \| "pt"` | No | Widget language (default: `"es"`) |
+| `defaultCountry` | `AlohaPayCountry` | No | Pre-select a country (AR, BR, CL, CO, MX) |
+| `useSandbox` | `boolean` | No | Use sandbox environment (default: `false`) |
+| `customer` | `CustomerData` | No | Pre-fill customer information |
+| `styles` | `CheckoutStyles` | No | Custom styling for the widget |
+| `onReady` | `() => void` | No | Called when widget is ready |
+| `onError` | `(error: Error) => void` | No | Called on errors |
+| `onPaymentLinkCreated` | `(data: { id: string; url: string }) => void` | No | Called when payment link is created |
+| `onPaymentComplete` | `() => void` | No | Called when payment is completed |
+
+### Supported Countries
+
+Aloha Pay supports the following countries:
+
+| Code | Country |
+|------|---------|
+| `AR` | Argentina |
+| `BR` | Brazil |
+| `CL` | Chile |
+| `CO` | Colombia |
+| `MX` | Mexico |
+
+Use the helper function to check if a country is supported:
 
 ```tsx
-<Link to="/about">About</Link>
+import { isAlohaPaCountrySupported } from "@/components/aloha-pay/AlohaPayCheckout";
+
+if (isAlohaPaCountrySupported(userCountry)) {
+  // Show Aloha Pay option
+}
 ```
 
-This will create a link that will navigate to the `/about` route.
+### Custom Styling
 
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you use the `<Outlet />` component.
-
-Here is an example layout that includes a header:
+Customize the widget appearance using the `styles` prop. Here's the example used in this demo with the Coral Cove Resort teal theme:
 
 ```tsx
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-
-import { Link } from "@tanstack/react-router";
-
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <header>
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/about">About</Link>
-        </nav>
-      </header>
-      <Outlet />
-      <TanStackRouterDevtools />
-    </>
-  ),
-})
+<AlohaPayCheckout
+  // ... other props
+  styles={{
+    // Ocean teal gradient header (resort-ocean theme)
+    headerBackground: "linear-gradient(135deg, #3B9AAD 0%, #2D7A8A 100%)",
+    // White text for amount display
+    amountColor: "#ffffff",
+    // Ocean teal button matching the site theme
+    buttonColor: "#3B9AAD",
+    // White text on button
+    buttonTextColor: "#ffffff",
+    // Coral accent for links (resort-coral)
+    linkColor: "#D97056",
+  }}
+/>
 ```
 
-The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
+#### Theme Color Reference
 
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
+| Color | CSS Variable | Hex | Usage |
+|-------|--------------|-----|-------|
+| Ocean Teal | `--resort-ocean` | `#3B9AAD` | Primary actions, buttons, headers |
+| Ocean Dark | `--resort-ocean-dark` | `#2D7A8A` | Gradient endpoints, hover states |
+| Coral | `--resort-coral` | `#D97056` | Accents, links, badges |
+| Palm | `--resort-palm` | `#5B9A65` | Success states |
+| Sand | `--resort-sand` | `#F7F5F0` | Backgrounds |
 
+### Amount Types (receive vs charge)
 
-## Data Fetching
+When creating payment links, you can specify how the amount should be interpreted:
 
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
+| Type | Description | Use Case |
+|------|-------------|----------|
+| `receive` | You receive exactly the requested amount in your wallet currency. The payer pays the equivalent in their local currency. | When you need a specific amount (e.g., "I need to receive exactly $100 USD") |
+| `charge` | The payer pays exactly the specified amount in their currency. You receive whatever the exchange rate gives you. | When the payer's amount matters (e.g., "Charge the customer exactly 50,000 CLP") |
 
 ```tsx
-const peopleRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/people",
-  loader: async () => {
-    const response = await fetch("https://swapi.dev/api/people");
-    return response.json() as Promise<{
-      results: {
-        name: string;
-      }[];
-    }>;
+// Example: Receive exactly 100 USD, customer pays equivalent in CLP
+{
+  amount: 100,
+  currency: "CLP",
+  amount_type: "receive"
+}
+
+// Example: Charge customer exactly 88,000 CLP
+{
+  amount: 88000,
+  currency: "CLP",
+  amount_type: "charge"
+}
+```
+
+### Supported Currencies
+
+| Code | Currency | Country |
+|------|----------|---------|
+| `ARS` | Peso Argentino | Argentina |
+| `BRL` | Real Brasileño | Brazil |
+| `CLP` | Peso Chileno | Chile |
+| `COP` | Peso Colombiano | Colombia |
+| `MXN` | Peso Mexicano | Mexico |
+
+### Payment Links API (Server-Side)
+
+For server-side integrations, you can create payment links directly via the API:
+
+```typescript
+// src/lib/aloha-pay.ts
+const response = await fetch("https://api.alohapay.co/api/external/v1/payment-links", {
+  method: "POST",
+  headers: {
+    "X-API-KEY": process.env.ALOHA_PAY_API_KEY,
+    "Content-Type": "application/json",
   },
-  component: () => {
-    const data = peopleRoute.useLoaderData();
-    return (
-      <ul>
-        {data.results.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    );
-  },
+  body: JSON.stringify({
+    amount: 165000,
+    currency: "CLP",
+    description: "Hotel Reservation - Ocean View Room",
+    amount_type: "charge",
+    webhook_url: "https://yoursite.com/api/webhooks/aloha-pay"
+  }),
 });
+
+const { data } = await response.json();
+// data.id - Payment link ID
+// data.url - URL to redirect customer
+// data.expires_at - Expiration timestamp
 ```
 
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
+### Webhooks
 
-### React-Query
+Configure a webhook URL to receive payment notifications:
 
-React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
+```typescript
+// Example webhook handler
+export async function handleWebhook(request: Request) {
+  const payload = await request.json();
 
-First add your dependencies:
+  switch (payload.event) {
+    case "payment.completed":
+      // Payment was successful
+      await updateOrderStatus(payload.data.payment_link_id, "paid");
+      break;
+    case "payment.failed":
+      // Payment failed
+      await updateOrderStatus(payload.data.payment_link_id, "failed");
+      break;
+  }
 
-```bash
-npm install @tanstack/react-query @tanstack/react-query-devtools
-```
-
-Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
-
-```tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// ...
-
-const queryClient = new QueryClient();
-
-// ...
-
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-
-  root.render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
+  return new Response("OK", { status: 200 });
 }
 ```
 
-You can also add TanStack Query Devtools to the root route (optional).
+### Error Handling
 
-```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+Common errors and how to handle them:
 
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
-      <TanStackRouterDevtools />
-    </>
-  ),
-});
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `ORIGIN_NOT_ALLOWED` | API key not configured for your domain | Contact support to whitelist your domain |
+| `INVALID_AMOUNT` | Amount is invalid or zero | Ensure amount > 0 |
+| `INVALID_CURRENCY` | Currency not supported | Use one of: ARS, BRL, CLP, COP, MXN |
+| `EXPIRED_LINK` | Payment link has expired | Create a new payment link |
+
+### Security Best Practices
+
+1. **Never expose server-side API keys** - Use `VITE_` prefix only for client-safe keys
+2. **Validate webhooks** - Verify webhook signatures to prevent spoofing
+3. **Use HTTPS** - Always use HTTPS in production
+4. **Validate amounts server-side** - Don't trust client-provided amounts
+5. **Use sandbox for testing** - Set `useSandbox={true}` during development
+
+```typescript
+// Good: Server-side API key (not exposed to browser)
+const apiKey = process.env.ALOHA_PAY_API_KEY;
+
+// Good: Client-side key (safe to expose)
+const clientKey = import.meta.env.VITE_ALOHA_PAY_API_KEY;
 ```
 
-Now you can use `useQuery` to fetch your data.
+## Project Structure
 
-```tsx
-import { useQuery } from "@tanstack/react-query";
-
-import "./App.css";
-
-function App() {
-  const { data } = useQuery({
-    queryKey: ["people"],
-    queryFn: () =>
-      fetch("https://swapi.dev/api/people")
-        .then((res) => res.json())
-        .then((data) => data.results as { name: string }[]),
-    initialData: [],
-  });
-
-  return (
-    <div>
-      <ul>
-        {data.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export default App;
+```
+src/
+├── components/
+│   ├── aloha-pay/
+│   │   └── AlohaPayCheckout.tsx    # Aloha Pay integration component
+│   ├── hotel/                       # Demo hotel booking components
+│   └── ui/                          # Shadcn UI components
+├── routes/
+│   ├── index.tsx                    # Home page
+│   ├── checkout.tsx                 # Checkout flow with payment
+│   └── api.payment-links.ts         # Payment Links API endpoint
+├── hooks/
+│   └── useBookingWizard.ts          # Booking state management
+├── lib/
+│   ├── aloha-pay.ts                 # Aloha Pay API client
+│   └── hotel/                       # Utility functions
+├── locales/
+│   ├── en.json                      # English translations
+│   └── es.json                      # Spanish translations
+└── types/
+    └── hotel.ts                     # TypeScript definitions
 ```
 
-You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
+## Available Scripts
 
-## State Management
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server on port 3000 |
+| `npm run build` | Create production build |
+| `npm run preview` | Preview production build |
+| `npm run test` | Run tests with Vitest |
+| `npm run lint` | Lint code with Biome |
+| `npm run format` | Format code with Biome |
+| `npm run check` | Run Biome check (lint + format) |
 
-Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
+## Tech Stack
 
-First you need to add TanStack Store as a dependency:
+- **Framework:** TanStack Start (React + SSR)
+- **Routing:** TanStack Router (file-based)
+- **Data Fetching:** TanStack Query
+- **Styling:** Tailwind CSS v4
+- **UI Components:** Shadcn/ui
+- **Testing:** Vitest
+- **Linting/Formatting:** Biome
+- **Internationalization:** i18next
 
-```bash
-npm install @tanstack/store
-```
+## Demo Flow
 
-Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
+1. **Home Page:** Browse available hotel rooms
+2. **Checkout Step 1:** Select dates and number of guests
+3. **Checkout Step 2:** Choose a room
+4. **Checkout Step 3:** Enter guest information
+5. **Checkout Step 4:** Select Aloha Pay and complete payment
 
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store } from "@tanstack/store";
-import "./App.css";
+## Documentation
 
-const countStore = new Store(0);
+> **Important:** Before integrating Aloha Pay into your application, we strongly recommend reading the complete documentation at **[developers.alohapay.co](https://developers.alohapay.co)**.
 
-function App() {
-  const count = useStore(countStore);
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-    </div>
-  );
-}
+The documentation covers:
+- API reference and authentication
+- Webhooks and event handling
+- Payment methods by country
+- Testing in sandbox mode
+- Error handling and troubleshooting
+- Security best practices
 
-export default App;
-```
+## Additional Resources
 
-One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
+- [Aloha Pay Developer Portal](https://developers.alohapay.co)
+- [TanStack Start Documentation](https://tanstack.com/start)
+- [Shadcn/ui Documentation](https://ui.shadcn.com)
 
-Let's check this out by doubling the count using derived state.
+## Support
 
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store, Derived } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-const doubledStore = new Derived({
-  fn: () => countStore.state * 2,
-  deps: [countStore],
-});
-doubledStore.mount();
-
-function App() {
-  const count = useStore(countStore);
-  const doubledCount = useStore(doubledStore);
-
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-      <div>Doubled - {doubledCount}</div>
-    </div>
-  );
-}
-
-export default App;
-```
-
-We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
-
-Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
-
-You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+For questions about Aloha Pay integration, contact us at **developers@aloha.co** or visit the [developer portal](https://developers.alohapay.co).
